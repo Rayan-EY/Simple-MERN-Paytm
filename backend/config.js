@@ -1,0 +1,1 @@
+export const JWT_SECRET="1RN21CS120"

@@ -1,11 +1,14 @@
-const express = require('express');
-const app = express();
-const PORT = process.env.PORT || 3000;
+const express = require("express");
+const { connection } = require("./db");
+const cors=require('cors')
+const bodyParser=require('body-parser')
+const mainRouter=require('./routes/index')
 
-app.get('/', (req, res) => {
-  res.send('Hello, World!');
-});
+const app=express()
+app.use(cors())
+app.use(bodyParser.json())
+app.use("/api/v1",mainRouter)
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+
+app.listen(3000)
+
