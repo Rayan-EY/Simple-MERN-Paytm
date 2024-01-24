@@ -21,9 +21,6 @@ const accountSchema = new mongoose.Schema({
 });
 
 const Account = mongoose.model('Account', accountSchema);
-
-
-
 // Create a model from the schema
 const User = mongoose.model('User', userSchema);
 
