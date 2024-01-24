@@ -1,4 +1,4 @@
-import { JWT_SECRET } from '../config';
+
 const jwt=require('jsonwebtoken')
 
 const zod=require('zod')
@@ -9,7 +9,7 @@ const signinBody = zod.object({
 	password: zod.string()
 })
 
-export const registerUser=async (req,res)=>{
+const registerUser=async (req,res)=>{
     const [username,firstName,lastName,password]=req.body;
     if(!(nameSchema.parse(username,password,lastName,password))){
         return res.json({
@@ -43,7 +43,7 @@ export const registerUser=async (req,res)=>{
 
     const token=jwt.sign({
         userId
-    },JWT_SECRET);
+    },process.env.JWT_SECRET);
 
     res.json({
         msg:"User added"
@@ -55,7 +55,7 @@ export const registerUser=async (req,res)=>{
     
 }
 
-export const signIn=async (req, res) => {
+const signIn=async (req, res) => {
     const { success } = signinBody.safeParse(req.body)
     if (!success) {
         return res.status(411).json({
@@ -71,7 +71,7 @@ export const signIn=async (req, res) => {
     if (user) {
         const token = jwt.sign({
             userId: user._id
-        }, JWT_SECRET);
+        }, process.env.JWT_SECRET);
   
         res.json({
             token: token
@@ -85,7 +85,7 @@ export const signIn=async (req, res) => {
     })
 }
 
-export const updateInfo=async (req,res)=>{
+const updateInfo=async (req,res)=>{
     const updateBody = zod.object({
         password: zod.string().optional(),
         firstName: zod.string().optional(),
@@ -110,7 +110,7 @@ export const updateInfo=async (req,res)=>{
 
 }
 
-export const bulkInfo=async (req,res)=>{
+const bulkInfo=async (req,res)=>{
     const filter = req.query.filter || "";
 
     const users = await User.find({
@@ -133,4 +133,11 @@ export const bulkInfo=async (req,res)=>{
             _id: user._id
         }))
     })
+}
+
+module.exports={
+    bulkInfo,
+    registerUser,
+    updateInfo,
+    signIn
 }
