@@ -10,14 +10,14 @@ const signinBody = zod.object({
 })
 
 const registerUser=async (req,res)=>{
-    const [username,firstName,lastName,password]=req.body;
-    if(!(nameSchema.parse(username,password,lastName,password))){
+    const {username,firstName,lastName,password}=req.body;
+    if(!(nameSchema.parse(username,firstName,lastName,password))){
         return res.json({
             msg:"Invalid details"
         })
     }
-
-    const existingUser=await db.findOne({
+    try{
+    const existingUser=await db.User.findOne({
         username:req.body.username
     })
 
@@ -27,20 +27,20 @@ const registerUser=async (req,res)=>{
         })
     }
 
-    const user=await db.create({
+    const user=await db.User.create({
         username: req.body.username,
         password: req.body.password,
         firstName: req.body.firstName,
         lastName: req.body.lastName,
     })
     
-
-    const userId=db._id;
-    await Account.create({
+   
+    const userId=user._id;
+    await db.Account.create({
         userId,
         balance: 1 + Math.random() * 10000
     })
-
+    console.log(process.env.JWT_SECRET);
     const token=jwt.sign({
         userId
     },process.env.JWT_SECRET);
@@ -48,6 +48,9 @@ const registerUser=async (req,res)=>{
     res.json({
         msg:"User added"
     })
+} catch(err){
+    res.status(401).json({msg:"Internal servfer error"})
+}
 
 
 
@@ -62,8 +65,8 @@ const signIn=async (req, res) => {
             message: "Incorrect inputs"
         })
     }
-
-    const user = await db.findOne({
+    try{
+    const user = await db.User.findOne({
         username: req.body.username,
         password: req.body.password
     });
@@ -83,6 +86,9 @@ const signIn=async (req, res) => {
     res.status(411).json({
         message: "Error while logging in"
     })
+    } catch(err){
+        res.status(401).json({ masg:"Internal server error"})
+    }
 }
 
 const updateInfo=async (req,res)=>{
@@ -91,6 +97,7 @@ const updateInfo=async (req,res)=>{
         firstName: zod.string().optional(),
         lastName: zod.string().optional(),
     })
+    try{
     const {success}=updateBody.safeParse(req.body)
 
     if(!success){
@@ -106,14 +113,18 @@ const updateInfo=async (req,res)=>{
     res.json({
         msg:"updated"
     })
+} catch(err){
+    res.status(401).json({ masg:"Internal server error"})
+}
 
 
 }
 
 const bulkInfo=async (req,res)=>{
-    const filter = req.query.filter || "";
+    try {
+        const filter = req.query.filter || "";
 
-    const users = await User.find({
+    const users = await db.User.find({
         $or: [{
             firstName: {
                 "$regex": filter
@@ -133,6 +144,9 @@ const bulkInfo=async (req,res)=>{
             _id: user._id
         }))
     })
+}   catch(err){
+    res.status(401).json({ masg:"Internal server error"})
+}
 }
 
 module.exports={

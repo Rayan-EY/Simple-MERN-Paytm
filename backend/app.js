@@ -1,6 +1,8 @@
 const express = require("express");
-const { connection } = require("./db");
+const { connection, connectToDB } = require("./db");
 const cors=require('cors')
+require('dotenv').config();
+
 const bodyParser=require('body-parser')
 const mainRouter=require('./routes/index')
 const accountRouter=require("./routes/account")
@@ -14,3 +16,4 @@ app.use("/api/v1/account",accountRouter)
 
 app.listen(3000)
 
+connectToDB();
