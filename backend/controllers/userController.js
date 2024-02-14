@@ -3,16 +3,17 @@ const jwt=require('jsonwebtoken')
 
 const zod=require('zod')
 const db=require("../db")
-const nameSchema=zod.string()
+const nameSchema=zod.string();
 const signinBody = zod.object({
     username: zod.string().email(),
 	password: zod.string()
 })
 
 const registerUser=async (req,res)=>{
+    console.log("hit signup");
     const {username,firstName,lastName,password}=req.body;
-    if(!(nameSchema.parse(username,firstName,lastName,password))){
-        return res.json({
+    if((username,firstName,lastName,password)=='' || !(nameSchema.parse(username,firstName,lastName,password))){
+        return res.status(404).json({
             msg:"Invalid details"
         })
     }
@@ -22,7 +23,7 @@ const registerUser=async (req,res)=>{
     })
 
     if(existingUser){
-        return res.json({
+        return res.status(409).json({
             msg:"already exists"
         })
     }
@@ -45,11 +46,12 @@ const registerUser=async (req,res)=>{
         userId
     },process.env.JWT_SECRET);
 
-    res.json({
-        msg:"User added"
+    res.status(200).json({
+        msg:"User added",
+        token:token
     })
 } catch(err){
-    res.status(401).json({msg:"Internal servfer error"})
+    res.status(500).json({msg:"Internal server error"})
 }
 
 
@@ -76,18 +78,18 @@ const signIn=async (req, res) => {
             userId: user._id
         }, process.env.JWT_SECRET);
   
-        res.json({
+        res.status(200).json({
             token: token
         })
         return;
     }
 
     
-    res.status(411).json({
-        message: "Error while logging in"
+    res.status(404).json({
+        message: "Error:404: User not found!"
     })
     } catch(err){
-        res.status(401).json({ masg:"Internal server error"})
+        res.status(401).json({ msg:"Internal server error"})
     }
 }
 
@@ -122,6 +124,7 @@ const updateInfo=async (req,res)=>{
 
 const bulkInfo=async (req,res)=>{
     try {
+        console.log("hit bulk");
         const filter = req.query.filter || "";
 
     const users = await db.User.find({
@@ -149,9 +152,20 @@ const bulkInfo=async (req,res)=>{
 }
 }
 
+const users = async (req, res) => {
+    try {
+      const users = await db.User.find();
+      res.json(users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
 module.exports={
     bulkInfo,
     registerUser,
     updateInfo,
-    signIn
+    signIn,
+    users
 }

@@ -1,9 +1,8 @@
 const express=require('express');
-const userRouter=require("./user");
 const { authMiddleware } = require('../middleware');
 const  accountController  = require('../controllers/accountController');
 const Router=express.Router();
 
-Router.get("/balance",authMiddleware,accountController.getBalance)
-
+Router.get("/balance",accountController.getBalance)
+Router.post("/transfer",authMiddleware,accountController.transfer)
 module.exports=Router;

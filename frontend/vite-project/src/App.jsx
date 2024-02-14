@@ -2,6 +2,11 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+import { Signup } from './components/Signup'
+import { Signin } from './components/Signin'
+import { Dashboard } from './components/Dashboard'
+import { SendMoney } from './components/SendMoney'
+
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 
