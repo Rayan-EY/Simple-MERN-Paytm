@@ -3,51 +3,56 @@ const jwt=require('jsonwebtoken')
 
 const zod=require('zod')
 const db=require("../db")
-const nameSchema=zod.string()
+const nameSchema=zod.string();
 const signinBody = zod.object({
     username: zod.string().email(),
 	password: zod.string()
 })
 
 const registerUser=async (req,res)=>{
-    const [username,firstName,lastName,password]=req.body;
-    if(!(nameSchema.parse(username,password,lastName,password))){
-        return res.json({
+    console.log("hit signup");
+    const {username,firstName,lastName,password}=req.body;
+    if((username,firstName,lastName,password)=='' || !(nameSchema.parse(username,firstName,lastName,password))){
+        return res.status(404).json({
             msg:"Invalid details"
         })
     }
-
-    const existingUser=await db.findOne({
+    try{
+    const existingUser=await db.User.findOne({
         username:req.body.username
     })
 
     if(existingUser){
-        return res.json({
+        return res.status(409).json({
             msg:"already exists"
         })
     }
 
-    const user=await db.create({
+    const user=await db.User.create({
         username: req.body.username,
         password: req.body.password,
         firstName: req.body.firstName,
         lastName: req.body.lastName,
     })
     
-
-    const userId=db._id;
-    await Account.create({
+   
+    const userId=user._id;
+    await db.Account.create({
         userId,
         balance: 1 + Math.random() * 10000
     })
-
+    console.log(process.env.JWT_SECRET);
     const token=jwt.sign({
         userId
     },process.env.JWT_SECRET);
 
-    res.json({
-        msg:"User added"
+    res.status(200).json({
+        msg:"User added",
+        token:token
     })
+} catch(err){
+    res.status(500).json({msg:"Internal server error"})
+}
 
 
 
@@ -62,8 +67,8 @@ const signIn=async (req, res) => {
             message: "Incorrect inputs"
         })
     }
-
-    const user = await db.findOne({
+    try{
+    const user = await db.User.findOne({
         username: req.body.username,
         password: req.body.password
     });
@@ -73,16 +78,19 @@ const signIn=async (req, res) => {
             userId: user._id
         }, process.env.JWT_SECRET);
   
-        res.json({
+        res.status(200).json({
             token: token
         })
         return;
     }
 
     
-    res.status(411).json({
-        message: "Error while logging in"
+    res.status(404).json({
+        message: "Error:404: User not found!"
     })
+    } catch(err){
+        res.status(401).json({ msg:"Internal server error"})
+    }
 }
 
 const updateInfo=async (req,res)=>{
@@ -91,6 +99,7 @@ const updateInfo=async (req,res)=>{
         firstName: zod.string().optional(),
         lastName: zod.string().optional(),
     })
+    try{
     const {success}=updateBody.safeParse(req.body)
 
     if(!success){
@@ -106,14 +115,19 @@ const updateInfo=async (req,res)=>{
     res.json({
         msg:"updated"
     })
+} catch(err){
+    res.status(401).json({ masg:"Internal server error"})
+}
 
 
 }
 
 const bulkInfo=async (req,res)=>{
-    const filter = req.query.filter || "";
+    try {
+        console.log("hit bulk");
+        const filter = req.query.filter || "";
 
-    const users = await User.find({
+    const users = await db.User.find({
         $or: [{
             firstName: {
                 "$regex": filter
@@ -133,11 +147,25 @@ const bulkInfo=async (req,res)=>{
             _id: user._id
         }))
     })
+}   catch(err){
+    res.status(401).json({ masg:"Internal server error"})
 }
+}
+
+const users = async (req, res) => {
+    try {
+      const users = await db.User.find();
+      res.json(users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
 
 module.exports={
     bulkInfo,
     registerUser,
     updateInfo,
-    signIn
+    signIn,
+    users
 }
